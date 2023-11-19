@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract AdvancedSmartContract is Ownable {
+    event DataUpdated(address indexed updatedBy, uint256 newData);
+    event EtherWithdrawn(address indexed withdrawer, uint256 amount);
+    event TokenWithdrawn(address indexed withdrawer, address indexed token, uint256 amount);
+
+    mapping(address => uint256) private balances;
+
+    constructor() {}
+
+    function updateBalance(address account, uint256 newData) external onlyOwner {
+        require(newData != balances[account], "New data must be different from current data");
+        balances[account] = newData;
+        emit DataUpdated(account, newData);
+    }
+
+    function getBalance(address account) external view returns (uint256) {
+        return balances[account];
+    }
+
+    function withdrawEther(uint256 amount) external onlyOwner {
+        require(amount > 0, "Withdrawal amount must be greater than 0");
+        require(amount <= address(this).balance, "Insufficient contract balance");
+
+        payable(owner()).transfer(amount);
+        emit EtherWithdrawn(owner(), amount);
+    }
+
+    function withdrawToken(address token, uint256 amount) external onlyOwner {
+        require(amount > 0, "Withdrawal amount must be greater than 0");
+
+        IERC20 tokenContract = IERC20(token);
+        require(tokenContract.balanceOf(address(this)) >= amount, "Insufficient token balance");
+
+        tokenContract.transfer(owner(), amount);
+        emit TokenWithdrawn(owner(), token, amount);
+    }
+}
