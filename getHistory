@@ -1,0 +1,54 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract EnhancedStorageETH {
+    address public owner;
+    
+    // 用户存储的数据映射
+    mapping(address => string) public userData;
+
+    // 用户历史数据记录
+    mapping(address => string[]) public userHistory;
+
+    event DataStored(address indexed user, string data);
+    event DataDeleted(address indexed deleter);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can call this function");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function set(string memory newData) external {
+        require(bytes(newData).length > 0, "Data cannot be empty");
+
+        // 保存历史记录
+        userHistory[msg.sender].push(userData[msg.sender]);
+
+        // 更新数据
+        userData[msg.sender] = newData;
+
+        emit DataStored(msg.sender, newData);
+    }
+
+    function get() external view returns (string memory) {
+        return userData[msg.sender];
+    }
+
+    function getHistory() external view returns (string[] memory) {
+        return userHistory[msg.sender];
+    }
+
+    function deleteData() external onlyOwner {
+        // 保存历史记录
+        userHistory[msg.sender].push(userData[msg.sender]);
+
+        // 删除数据
+        delete userData[msg.sender];
+
+        emit DataDeleted(msg.sender);
+    }
+}
